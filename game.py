@@ -14,6 +14,9 @@ BOT = 1
 
 
 class ConnectFourBoard:
+    game_over = 0
+    winner = 0
+
     def __init__(self):
         self.board = np.zeros((6, 7))
 
@@ -30,18 +33,21 @@ class ConnectFourBoard:
         return -1
 
 
-    def winning_move(self):
+    def winning_move(self, player):
         for row in range(6):#horizontal win
              for col in range(4):
                  if self.board[row][col] == self.board[row][col+1] == self.board[row][col+2] ==self.board[row][col+3] !=0:
-
+                     self.game_over = 1
+                     self.winner = player
                      return [[row,col],[row,col+1],[row,col+2],[row,col+3]]
+
 
 
         for col in range(7):#virtical win
             for row in range(3):
                 if self.board[row][col] == self.board[row+1][col] == self.board[row+2][col] == self.board[row+3][col] !=0:
-
+                    self.game_over = 1
+                    self.winner = player
                     return [[row,col],[row+1,col],[row+2,col],[row+3,col]]
 
 
@@ -50,12 +56,14 @@ class ConnectFourBoard:
             for row in range(6):
                 if row < 3 :
                     if self.board[row][col] == self.board[row+1][col+1] == self.board[row+2][col+2] == self.board[row+3][col+3] != 0:
-
+                        self.game_over = 1
+                        self.winner = player
                         return [[row,col],[row+1,col+1],[row+2,col+2],[row+2,col+3]]
 
                 else:
                     if self.board[row][col] == self.board[row-1][col+1] == self.board[row-2][col+2] == self.board[row-3][col+3] != 0:
-
+                        self.game_over = 1
+                        self.winner = player
                         return [[row,col],[row-1,col+1],[row-2,col+2],[row-3,col+3]]
 
 
@@ -194,6 +202,8 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
 
 
     def drop(self, col):
+        if self.connect_four_board.game_over == 1:
+            return 
         row = self.connect_four_board.drop(col, self.player)
 
         if row == -1:
@@ -201,24 +211,24 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         if self.player == HUMAN:
             self.pushButtons[row][col].setStyleSheet("background-color: red;")
             self.player = (self.player + 1) % 2
-            list = self.connect_four_board.winning_move()
+            win_pos_list = self.connect_four_board.winning_move(self.player)
 
-            for i in list:
+            for i in win_pos_list:
                 self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid #660066;" );
                 self.winLabel.setText("You WoN !!!")
+                self.turnLabel.setText("")
 
             self.flip_turn()
-
 
         elif self.player == BOT:
             self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
             self.player = (self.player + 1) % 2
-            list = self.connect_four_board.winning_move()
+            win_pos_list = self.connect_four_board.winning_move(self.player)
 
-            for i in list:
+            for i in win_pos_list:
                 self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid #660066;" );
                 self.winLabel.setText("Computer WoN !!!")
-
+                self.turnLabel.setText("")
 
             self.flip_turn()
 
