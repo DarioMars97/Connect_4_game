@@ -185,7 +185,7 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
 
     def browse_and_save(self):
         save_file, _ = QFileDialog.getSaveFileName(caption="Save File As", directory=".",
-                                                filter="All Files (*.*)")
+                                                filter=".txt")
         with open(save_file, 'w') as outfile:
             board_bourd = self.connect_four_board.board.tolist()
             player = self.player
@@ -203,7 +203,7 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
 
     def drop(self, col):
         if self.connect_four_board.game_over == 1:
-            return 
+            return
         row = self.connect_four_board.drop(col, self.player)
 
         if row == -1:
@@ -213,24 +213,26 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
             self.player = (self.player + 1) % 2
             win_pos_list = self.connect_four_board.winning_move(self.player)
 
+
+            self.flip_turn()
             for i in win_pos_list:
                 self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid #660066;" );
                 self.winLabel.setText("You WoN !!!")
                 self.turnLabel.setText("")
 
-            self.flip_turn()
 
         elif self.player == BOT:
             self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
             self.player = (self.player + 1) % 2
             win_pos_list = self.connect_four_board.winning_move(self.player)
 
+            self.flip_turn()
+
             for i in win_pos_list:
                 self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid #660066;" );
                 self.winLabel.setText("Computer WoN !!!")
                 self.turnLabel.setText("")
 
-            self.flip_turn()
 
 
 app = QApplication(sys.argv)
