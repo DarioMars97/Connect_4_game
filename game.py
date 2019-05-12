@@ -6,6 +6,7 @@ import numpy as np
 import json
 import dola
 from time import sleep
+from random import randint
 
 
 HUMAN = 0
@@ -82,7 +83,12 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         QMainWindow.__init__(self)
         self.setupUi(self)
 
-        self.player = 0
+        self.player = randint(0, 1)
+
+        if self.player == 1:
+            self.turnLabel.setText("Computer Turn!")
+        elif self.player == 0:
+            self.turnLabel.setText("Your Turn!")
 
         self.tabWidget.setCurrentIndex(0)
         self.tabWidget.tabBar().hide()
