@@ -30,52 +30,36 @@ class ConnectFourBoard:
         return -1
 
 
-    def winning_move(self,sa):
+    def winning_move(self):
         for row in range(6):#horizontal win
              for col in range(4):
                  if self.board[row][col] == self.board[row][col+1] == self.board[row][col+2] ==self.board[row][col+3] !=0:
 
-                     sa[row][col].setStyleSheet( sa[row][col].styleSheet()+"border: 7px solid #660066;" );
-                     sa[row][col+1].setStyleSheet( sa[row][col+1].styleSheet() +"border: 7px solid #660066;" );
-                     sa[row][col+2].setStyleSheet(sa[row][col+2].styleSheet() +"border: 7px solid #660066;" );
-                     sa[row][col+3].setStyleSheet(sa[row][col+3].styleSheet() +"border: 7px solid #660066;" );
-
-#                     return True
+                     return [[row,col],[row,col+1],[row,col+2],[row,col+3]]
 
 
         for col in range(7):#virtical win
             for row in range(3):
                 if self.board[row][col] == self.board[row+1][col] == self.board[row+2][col] == self.board[row+3][col] !=0:
 
-                    sa[row][col].setStyleSheet( sa[row][col].styleSheet()+"border: 7px solid #660066;" );
-                    sa[row+1][col].setStyleSheet( sa[row+1][col].styleSheet() +"border: 7px solid #660066;" );
-                    sa[row+2][col].setStyleSheet(sa[row+2][col].styleSheet() +"border: 7px solid #660066;" );
-                    sa[row+3][col].setStyleSheet(sa[row+3][col].styleSheet() +"border: 7px solid #660066;" );
+                    return [[row,col],[row+1,col],[row+2,col],[row+3,col]]
 
-#                    return True
+
 
         for col in range(4):
             for row in range(6):
                 if row < 3 :
                     if self.board[row][col] == self.board[row+1][col+1] == self.board[row+2][col+2] == self.board[row+3][col+3] != 0:
 
-                        sa[row][col].setStyleSheet( sa[row][col].styleSheet()+"border: 7px solid #660066;" );
-                        sa[row+1][col+1].setStyleSheet( sa[row+1][col+1].styleSheet() +"border: 7px solid #660066;" );
-                        sa[row+2][col+2].setStyleSheet(sa[row+2][col+2].styleSheet() +"border: 7px solid #660066;" );
-                        sa[row+3][col+3].setStyleSheet(sa[row+3][col+3].styleSheet() +"border: 7px solid #660066;" );
-
-                        #return True
+                        return [[row,col],[row+1,col+1],[row+2,col+2],[row+2,col+3]]
 
                 else:
                     if self.board[row][col] == self.board[row-1][col+1] == self.board[row-2][col+2] == self.board[row-3][col+3] != 0:
 
-                        sa[row][col].setStyleSheet( sa[row][col].styleSheet()+"border: 7px solid #660066;" );
-                        sa[row-1][col+1].setStyleSheet( sa[row-1][col+1].styleSheet() +"border: 7px solid #660066;" );
-                        sa[row-2][col+2].setStyleSheet(sa[row-2][col+2].styleSheet() +"border: 7px solid #660066;" );
-                        sa[row-3][col+3].setStyleSheet(sa[row-3][col+3].styleSheet() +"border: 7px solid #660066;" );
+                        return [[row,col],[row-1,col+1],[row-2,col+2],[row-3,col+3]]
 
-                        #return True
 
+        return []
 
 
 class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
@@ -200,18 +184,44 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
             board = {"board": board_bourd, "player": player}
             json.dump(board, outfile)
 
+
+    def flip_turn(self):
+        if self.player == 1:
+            self.turnLabel.setText("Computer Turn!")
+
+        elif self.player == 0:
+            self.turnLabel.setText("Your Turn!")
+
+
     def drop(self, col):
         row = self.connect_four_board.drop(col, self.player)
+
         if row == -1:
             return
         if self.player == HUMAN:
             self.pushButtons[row][col].setStyleSheet("background-color: red;")
             self.player = (self.player + 1) % 2
-            self.connect_four_board.winning_move(self.pushButtons)
+            list = self.connect_four_board.winning_move()
+
+            for i in list:
+                self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid #660066;" );
+                self.winLabel.setText("You WoN !!!")
+
+            self.flip_turn()
+
+
         elif self.player == BOT:
             self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
             self.player = (self.player + 1) % 2
-            self.connect_four_board.winning_move(self.pushButtons)
+            list = self.connect_four_board.winning_move()
+
+            for i in list:
+                self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid #660066;" );
+                self.winLabel.setText("Computer WoN !!!")
+
+
+            self.flip_turn()
+
 
 app = QApplication(sys.argv)
 game = ConnectFourDola()
