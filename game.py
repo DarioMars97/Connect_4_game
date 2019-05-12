@@ -23,8 +23,58 @@ class ConnectFourBoard:
         for row in range(6):
             if self.board[row][col] == 0:
                 self.board[row][col] = player+1
+
                 return row
+
         return -1
+
+
+    def winning_move(self,sa):
+        for row in range(6):#horizontal win
+             for col in range(4):
+                 if self.board[row][col] == self.board[row][col+1] == self.board[row][col+2] ==self.board[row][col+3] !=0:
+
+                     sa[row][col].setStyleSheet( sa[row][col].styleSheet()+"border: 7px solid #660066;" );
+                     sa[row][col+1].setStyleSheet( sa[row][col+1].styleSheet() +"border: 7px solid #660066;" );
+                     sa[row][col+2].setStyleSheet(sa[row][col+2].styleSheet() +"border: 7px solid #660066;" );
+                     sa[row][col+3].setStyleSheet(sa[row][col+3].styleSheet() +"border: 7px solid #660066;" );
+
+#                     return True
+
+
+        for col in range(7):#virtical win
+            for row in range(3):
+                if self.board[row][col] == self.board[row+1][col] == self.board[row+2][col] == self.board[row+3][col] !=0:
+
+                    sa[row][col].setStyleSheet( sa[row][col].styleSheet()+"border: 7px solid #660066;" );
+                    sa[row+1][col].setStyleSheet( sa[row+1][col].styleSheet() +"border: 7px solid #660066;" );
+                    sa[row+2][col].setStyleSheet(sa[row+2][col].styleSheet() +"border: 7px solid #660066;" );
+                    sa[row+3][col].setStyleSheet(sa[row+3][col].styleSheet() +"border: 7px solid #660066;" );
+
+#                    return True
+
+        for col in range(4):
+            for row in range(6):
+                if row < 3 :
+                    if self.board[row][col] == self.board[row+1][col+1] == self.board[row+2][col+2] == self.board[row+3][col+3] != 0:
+
+                        sa[row][col].setStyleSheet( sa[row][col].styleSheet()+"border: 7px solid #660066;" );
+                        sa[row+1][col+1].setStyleSheet( sa[row+1][col+1].styleSheet() +"border: 7px solid #660066;" );
+                        sa[row+2][col+2].setStyleSheet(sa[row+2][col+2].styleSheet() +"border: 7px solid #660066;" );
+                        sa[row+3][col+3].setStyleSheet(sa[row+3][col+3].styleSheet() +"border: 7px solid #660066;" );
+
+                        #return True
+
+                else:
+                    if self.board[row][col] == self.board[row-1][col+1] == self.board[row-2][col+2] == self.board[row-3][col+3] != 0:
+
+                        sa[row][col].setStyleSheet( sa[row][col].styleSheet()+"border: 7px solid #660066;" );
+                        sa[row-1][col+1].setStyleSheet( sa[row-1][col+1].styleSheet() +"border: 7px solid #660066;" );
+                        sa[row-2][col+2].setStyleSheet(sa[row-2][col+2].styleSheet() +"border: 7px solid #660066;" );
+                        sa[row-3][col+3].setStyleSheet(sa[row-3][col+3].styleSheet() +"border: 7px solid #660066;" );
+
+                        #return True
+
 
 
 class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
@@ -34,8 +84,8 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
 
         self.player = 0
 
-        self.tabWidget.tabBar().hide()
         self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.tabBar().hide()
 
         self.startButton.clicked.connect(self.start)
         self.saveButton.clicked.connect(self.browse_and_save)
@@ -130,9 +180,10 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         for r in range(6):
             for c in range(7):
                 if self.connect_four_board.board[r][c] == 1:
-                    self.pushButtons[r][c].setStyleSheet("background-color: red")
+                    self.pushButtons[r][c].setStyleSheet("background-color: red;")
                 elif self.connect_four_board.board[r][c] == 2:
-                    self.pushButtons[r][c].setStyleSheet("background-color: yellow")
+                    self.pushButtons[r][c].setStyleSheet("background-color: yellow;")
+
 
     def browse_and_save(self):
         save_file, _ = QFileDialog.getSaveFileName(caption="Save File As", directory=".",
@@ -148,12 +199,13 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         if row == -1:
             return
         if self.player == HUMAN:
-            self.pushButtons[row][col].setStyleSheet("background-color: red")
+            self.pushButtons[row][col].setStyleSheet("background-color: red;")
             self.player = (self.player + 1) % 2
+            self.connect_four_board.winning_move(self.pushButtons)
         elif self.player == BOT:
-            self.pushButtons[row][col].setStyleSheet("background-color: yellow")
+            self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
             self.player = (self.player + 1) % 2
-
+            self.connect_four_board.winning_move(self.pushButtons)
 
 app = QApplication(sys.argv)
 game = ConnectFourDola()
