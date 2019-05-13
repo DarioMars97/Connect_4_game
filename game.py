@@ -5,35 +5,54 @@ import sys
 import numpy as np
 import json
 import dola
-from random import randint
-from time import sleep
+from random import randint, shuffle, choice
+from math import inf
 
 
 HUMAN = 0
 BOT = 1
+BEST_COL = -1
 
 
 class MyThread(QThread):
-    def __init__(self):
+    def __init__(self, gui, connectFour):
         super(MyThread, self).__init__()
         self.quit_flag = False
+        self.connect_four = connectFour
+        self.gui = gui
+        self.gui.playNowButton.setEnabled(True)
 
     def run(self):
         while True:
             if not self.quit_flag:
-                sleep(1)
-                print("hey")
+                board_copy = self.connect_four.board.copy()
+                _, col = self.connect_four.minimax(board_copy, self.connect_four.level, -inf, inf, maximizer=True)
+                self.connect_four.best_col = col
+                self.quit_flag = True
+                # self.connect_four.drop(col, BOT)
+                self.gui.pushButtons[0][col].click()
+                self.gui.playNowButton.setEnabled(False)
             else:
                 break
 
         self.quit()
         self.wait()
 
+    def stop(self):
+        if BEST_COL != -1:
+            self.quit_flag = True
+            # self.connect_four.drop(col, BOT)
+            self.gui.pushButtons[0][BEST_COL].click()
+            self.gui.playNowButton.setEnabled(False)
+        self.terminate()
+
+
 
 class ConnectFourBoard:
     game_over = 0
     winner = 0
     level = 0
+    best_col = -1
 
     def __init__(self):
         self.board = np.zeros((6, 7))
@@ -42,7 +61,7 @@ class ConnectFourBoard:
         self.board.fill(0)
         self.game_over = 0
         self.winner = 0
-        self.level = 0
+        self.best_col = -1
 
     def set_level(self, level):
         self.level = level
@@ -56,51 +75,58 @@ class ConnectFourBoard:
 
         return -1
 
+    def drop_simulate(self, board_copy, col, player):
+        for row in range(6):
+            if board_copy[row][col] == 0:
+                board_copy[row][col] = player+1
 
+                return row
 
-    def win_percent(self):
+        return -1
+
+    def win_percent(self, board_copy):
         winPercent = 0
         for row in range(6):
             for col in range(7):
                 if col <= 3:
                     #Computer win check
-                    if [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(BOT+1) == 1 and [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(0) == 3:
+                    if [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(BOT+1) == 1 and [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(0) == 3:
                          winPercent += 1
-                    if [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(BOT+1) == 2 and [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(0) == 2:
+                    if [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(BOT+1) == 2 and [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(0) == 2:
                          winPercent += 10
-                    if [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(BOT+1) == 3 and [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(0) == 1:
+                    if [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(BOT+1) == 3 and [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(0) == 1:
                         winPercent += 100
-                    if [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(BOT+1) == 4:
+                    if [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(BOT+1) == 4:
                         winPercent += 10000
 
                     #Human win check
-                    if [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(HUMAN+1) == 1 and [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(0) == 3:
+                    if [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(HUMAN+1) == 1 and [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(0) == 3:
                          winPercent -= 1
-                    if [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(HUMAN+1) == 2 and [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(0) == 2:
+                    if [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(HUMAN+1) == 2 and [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(0) == 2:
                          winPercent -= 10
-                    if [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(HUMAN+1) == 3 and [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(0) == 1:
+                    if [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(HUMAN+1) == 3 and [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(0) == 1:
                         winPercent -= 100
-                    if [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(HUMAN+1) == 4 and [self.board[row][col] , self.board[row][col+1] , self.board[row][col+2] , self.board[row][col+3]].count(0) == 0:
+                    if [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(HUMAN+1) == 4 and [board_copy[row][col] , board_copy[row][col+1] , board_copy[row][col+2] , board_copy[row][col+3]].count(0) == 0:
                         winPercent -= 10000
 
                 if col == 3 or col >= 4:
-                    if [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(BOT+1) == 1 and [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(0) == 3:
+                    if [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(BOT+1) == 1 and [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(0) == 3:
                          winPercent += 1
-                    if [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(BOT+1) == 2 and [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(0) == 2:
+                    if [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(BOT+1) == 2 and [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(0) == 2:
                          winPercent += 10
-                    if [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(BOT+1) == 3 and [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(0) == 1:
+                    if [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(BOT+1) == 3 and [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(0) == 1:
                         winPercent += 100
-                    if [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(BOT+1) == 4:
+                    if [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(BOT+1) == 4:
                         winPercent += 10000
 
                     #Human win check
-                    if [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(HUMAN+1) == 1 and [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(0) == 3:
+                    if [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(HUMAN+1) == 1 and [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(0) == 3:
                          winPercent -= 1
-                    if [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(HUMAN+1) == 2 and [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(0) == 2:
+                    if [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(HUMAN+1) == 2 and [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(0) == 2:
                          winPercent -= 10
-                    if [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(HUMAN+1) == 3 and [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(0) == 1:
+                    if [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(HUMAN+1) == 3 and [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(0) == 1:
                         winPercent -= 100
-                    if [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(HUMAN+1) == 4 and [self.board[row][col] , self.board[row][col-1] , self.board[row][col-2] , self.board[row][col-3]].count(0) == 0:
+                    if [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(HUMAN+1) == 4 and [board_copy[row][col] , board_copy[row][col-1] , board_copy[row][col-2] , board_copy[row][col-3]].count(0) == 0:
                         winPercent -= 10000
 
 
@@ -110,42 +136,42 @@ class ConnectFourBoard:
             for row in range(6):
                 if row <= 2:
                     #Computer win check
-                    if [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(BOT+1) == 1 and [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(0) == 3:
+                    if [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(BOT+1) == 1 and [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(0) == 3:
                         winPercent += 1
-                    if [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(BOT+1) == 2 and [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(0) == 2:
+                    if [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(BOT+1) == 2 and [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(0) == 2:
                         winPercent += 10
-                    if [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(BOT+1) == 3 and [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(0) == 1:
+                    if [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(BOT+1) == 3 and [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(0) == 1:
                         winPercent += 100
-                    if [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(BOT+1) == 4:
+                    if [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(BOT+1) == 4:
                         winPercent += 10000
 
                     #Human win check
-                    if [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(HUMAN+1) == 1 and [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(0) == 3:
+                    if [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(HUMAN+1) == 1 and [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(0) == 3:
                         winPercent -= 1
-                    if [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(HUMAN+1) == 2 and [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(0) == 2:
+                    if [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(HUMAN+1) == 2 and [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , self.board[row+3][col]].count(0) == 2:
                         winPercent -= 10
-                    if [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(HUMAN+1) == 3 and [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(0) == 1:
+                    if [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(HUMAN+1) == 3 and [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(0) == 1:
                         winPercent -= 100
-                    if [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(HUMAN+1) == 4 and [self.board[row][col] , self.board[row+1][col] , self.board[row+2][col] , self.board[row+3][col]].count(0) == 0:
+                    if [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(HUMAN+1) == 4 and [board_copy[row][col] , board_copy[row+1][col] , board_copy[row+2][col] , board_copy[row+3][col]].count(0) == 0:
                         winPercent -= 10000
                 else:
-                    if [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(BOT+1) == 1 and [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(0) == 3:
+                    if [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(BOT+1) == 1 and [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(0) == 3:
                         winPercent += 1
-                    if [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(BOT+1) == 2 and [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(0) == 2:
+                    if [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(BOT+1) == 2 and [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(0) == 2:
                         winPercent += 10
-                    if [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(BOT+1) == 3 and [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(0) == 1:
+                    if [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(BOT+1) == 3 and [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(0) == 1:
                         winPercent += 100
-                    if [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(BOT+1) == 4:
+                    if [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(BOT+1) == 4:
                         winPercent += 10000
 
                     #Human win check
-                    if [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(HUMAN+1) == 1 and [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(0) == 3:
+                    if [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(HUMAN+1) == 1 and [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(0) == 3:
                         winPercent -= 1
-                    if [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(HUMAN+1) == 2 and [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(0) == 2:
+                    if [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(HUMAN+1) == 2 and [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(0) == 2:
                         winPercent -= 10
-                    if [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(HUMAN+1) == 3 and [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(0) == 1:
+                    if [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(HUMAN+1) == 3 and [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(0) == 1:
                         winPercent -= 100
-                    if [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(HUMAN+1) == 4 and [self.board[row][col] , self.board[row-1][col] , self.board[row-2][col] , self.board[row-3][col]].count(0) == 0:
+                    if [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(HUMAN+1) == 4 and [board_copy[row][col] , board_copy[row-1][col] , board_copy[row-2][col] , board_copy[row-3][col]].count(0) == 0:
                         winPercent -= 10000
 
 
@@ -153,72 +179,134 @@ class ConnectFourBoard:
             for row in range(6):
                 if row < 3 :
                     #Computer win check
-                    if [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(BOT+1)==2 and [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(0)==2:
+                    if [self.board[row][col], self.board[row + 1][col + 1], self.board[row + 2][col + 2], self.board[row + 3][col + 3]].count(BOT + 1) == 1 and [self.board[row][col], self.board[row + 1][col + 1], self.board[row + 2][col + 2],self.board[row + 3][col + 3]].count(0) == 3:
+                        winPercent += 1
+                    if [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(BOT+1)==2 and [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(0)==2:
                         winPercent += 10
-                    if [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(BOT+1)==3 and [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(0)==1:
+                    if [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(BOT+1)==3 and [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(0)==1:
                         winPercent += 100
-                    if [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(BOT+1)==4:
+                    if [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(BOT+1)==4:
                         winPercent += 10000
 
                     #Human win check
-                    if [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(HUMAN+1)==2 and [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(0)==2:
+                    if [self.board[row][col], self.board[row + 1][col + 1], self.board[row + 2][col + 2], self.board[row + 3][col + 3]].count(HUMAN + 1) == 1 and [self.board[row][col], self.board[row + 1][col + 1],self.board[row + 2][col + 2],self.board[row + 3][col + 3]].count(0) == 3:
+                        winPercent -= 1
+                    if [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(HUMAN+1)==2 and [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(0)==2:
                         winPercent -= 10
-                    if [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(HUMAN+1)==3 and [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(0)==1:
+                    if [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(HUMAN+1)==3 and [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(0)==1:
                         winPercent -= 100
-                    if [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(HUMAN+1)==4 and [self.board[row][col] , self.board[row+1][col+1] , self.board[row+2][col+2] , self.board[row+3][col+3]].count(0)==0:
+                    if [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(HUMAN+1)==4 and [board_copy[row][col] , board_copy[row+1][col+1] , board_copy[row+2][col+2] , board_copy[row+3][col+3]].count(0)==0:
                         winPercent -= 10000
 
                 else:
                     #Computer win check
-                    if [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(BOT+1)==2 and [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(0)==2:
+                    if [self.board[row][col], self.board[row - 1][col + 1], self.board[row - 2][col + 2], self.board[row - 3][col + 3]].count(BOT + 1) == 1 and [self.board[row][col], self.board[row - 1][col + 1], self.board[row - 2][col + 2], self.board[row - 3][col + 3]].count(0) == 3:
+                        winPercent += 1
+                    if [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(BOT+1)==2 and [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(0)==2:
                         winPercent += 10
-                    if [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(BOT+1)==3 and [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(0)==1:
+                    if [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(BOT+1)==3 and [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(0)==1:
                         winPercent += 100
-                    if [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(BOT+1)==4:
+                    if [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(BOT+1)==4:
                         winPercent += 10000
 
                     #Human win check
-                    if [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(HUMAN+1)==2 and [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(0)==2:
+                    if [self.board[row][col], self.board[row - 1][col + 1], self.board[row - 2][col + 2], self.board[row - 3][col + 3]].count(HUMAN + 1) == 1 and [self.board[row][col], self.board[row - 1][col + 1], self.board[row - 2][col + 2], self.board[row - 3][col + 3]].count(0) == 3:
+                        winPercent -= 1
+                    if [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(HUMAN+1)==2 and [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(0)==2:
                         winPercent -= 10
-                    if [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(HUMAN+1)==3 and [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(0)==1:
+                    if [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(HUMAN+1)==3 and [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(0)==1:
                         winPercent -= 100
-                    if [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(HUMAN+1)==4 and [self.board[row][col] , self.board[row-1][col+1] , self.board[row-2][col+2] , self.board[row-3][col+3]].count(0)==0:
+                    if [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(HUMAN+1)==4 and [board_copy[row][col] , board_copy[row-1][col+1] , board_copy[row-2][col+2] , board_copy[row-3][col+3]].count(0)==0:
                         winPercent -= 10000
 
         return winPercent
 
+    def get_valid_locations(self, board_copy):
+        valid_locations = []
+        for col in range(7):
+            for row in range(6):
+                if board_copy[row][col] == 0:
+                    valid_locations.append(col)
+                    break
+        return valid_locations
 
+    def terminal_node(self, board_copy):
+        return self.winning_move(board_copy)[1] or len(self.get_valid_locations(board_copy)) == 0
 
-    def winning_move(self, player):
+    def minimax(self, board_copy, depth, alpha, beta, maximizer=False, minimizer=False):
+        terminal_node = self.terminal_node(board_copy)
+        global BEST_COL
+        if depth == 0 or terminal_node:
+            if terminal_node:
+                win_places, is_winning = self.winning_move(board_copy)
+                if is_winning:
+                    [row, col] = win_places[0]
+                    player = board_copy[row][col] - 1
+                    if player == HUMAN:
+                        return -99999, None
+                    elif player == BOT:
+                        return 99999, None
+                else:
+                    return 0, None
+            else:
+                return self.win_percent(board_copy), None
+        if maximizer:
+            value = -inf
+            valid_locations = self.get_valid_locations(board_copy)
+            shuffle(valid_locations)
+            best_col = choice(valid_locations)
+            for col in valid_locations:
+                copy_board = board_copy.copy()
+                self.drop_simulate(copy_board, col, BOT)
+                score = self.minimax(copy_board, depth-1, alpha, beta, minimizer=True)[0]
+                if score > value:
+                    best_col = col
+                    BEST_COL = best_col
+                value = max(value, score)
+                alpha = max(alpha, value)
+                if alpha >= beta:
+                    break
+            return value, best_col
+        elif minimizer:
+            value = inf
+            valid_locations = self.get_valid_locations(board_copy)
+            shuffle(valid_locations)
+            best_col = choice(valid_locations)
+            for col in valid_locations:
+                copy_board = board_copy.copy()
+                self.drop_simulate(copy_board, col, HUMAN)
+                score = self.minimax(copy_board, depth-1, alpha, beta, maximizer=True)[0]
+                if score < value:
+                    best_col = col
+                    BEST_COL = best_col
+                value = min(value, score)
+                beta = min(value, beta)
+                if alpha >= beta:
+                    break
+            return value, best_col
+
+    def winning_move(self, board):
         for row in range(6): # horizontal win
              for col in range(4):
-                 if self.board[row][col] == self.board[row][col+1] == self.board[row][col+2] ==self.board[row][col+3] !=0:
-                     self.game_over = 1
-                     self.winner = player
-                     return [[row,col],[row,col+1],[row,col+2],[row,col+3]]
+                 if board[row][col] == board[row][col+1] == board[row][col+2] ==board[row][col+3] !=0:
+                     return [[row, col], [row, col+1], [row, col+2], [row, col+3]], True
 
         for col in range(7): # virtical win
             for row in range(3):
-                if self.board[row][col] == self.board[row+1][col] == self.board[row+2][col] == self.board[row+3][col] !=0:
-                    self.game_over = 1
-                    self.winner = player
-                    return [[row,col],[row+1,col],[row+2,col],[row+3,col]]
+                if board[row][col] == board[row+1][col] == board[row+2][col] == board[row+3][col] !=0:
+                    return [[row, col], [row+1, col], [row+2, col], [row+3, col]], True
 
         for col in range(4):
             for row in range(6):
                 if row < 3 :
-                    if self.board[row][col] == self.board[row+1][col+1] == self.board[row+2][col+2] == self.board[row+3][col+3] != 0:
-                        self.game_over = 1
-                        self.winner = player
-                        return [[row,col],[row+1,col+1],[row+2,col+2],[row+3,col+3]]
+                    if board[row][col] == board[row+1][col+1] == board[row+2][col+2] == board[row+3][col+3] != 0:
+                        return [[row, col], [row+1, col+1], [row+2, col+2], [row+3, col+3]], True
 
                 else:
-                    if self.board[row][col] == self.board[row-1][col+1] == self.board[row-2][col+2] == self.board[row-3][col+3] != 0:
-                        self.game_over = 1
-                        self.winner = player
-                        return [[row,col],[row-1,col+1],[row-2,col+2],[row-3,col+3]]
+                    if board[row][col] == board[row-1][col+1] == board[row-2][col+2] == board[row-3][col+3] != 0:
+                        return [[row, col], [row-1, col+1], [row-2, col+2], [row-3, col+3]], True
 
-        return []
+        return [], False
 
 
 class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
@@ -226,12 +314,9 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         QMainWindow.__init__(self)
         self.setupUi(self)
 
-        self.player = randint(0, 1)
-
-        if self.player == 1:
-            self.turnLabel.setText("Computer Turn!")
-        elif self.player == 0:
-            self.turnLabel.setText("Your Turn!")
+        self.player = HUMAN
+        self.turnLabel.setText("Your Turn!")
+        self.playNowButton.setEnabled(False)
 
         self.tabWidget.setCurrentIndex(0)
         self.tabWidget.tabBar().hide()
@@ -308,27 +393,22 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         self.t.start()
 
     def terminate(self):
-        self.t.quit_flag = True
-        print("Stop sent")
+        self.mythread.stop()
 
     def start(self):
         self.tabWidget.setCurrentIndex(1)
         self.connect_four_board = ConnectFourBoard()
         if self.levelComboBox.currentText() == "Easy":
-            self.connect_four_board.set_level(1)
-        elif self.levelComboBox.currentText() == "Medium":
             self.connect_four_board.set_level(2)
+        elif self.levelComboBox.currentText() == "Medium":
+            self.connect_four_board.set_level(4)
         elif self.levelComboBox.currentText() == "Hard":
-            self.connect_four_board.set_level(3)
+            self.connect_four_board.set_level(6)
 
     def play_again(self):
         self.connect_four_board.clear()
-        self.player = randint(0, 1)
-
-        if self.player == 1:
-            self.turnLabel.setText("Computer Turn!")
-        elif self.player == 0:
-            self.turnLabel.setText("Your Turn!")
+        self.player = HUMAN
+        self.turnLabel.setText("Your Turn!")
 
         self.winLabel.setText("")
 
@@ -379,6 +459,9 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         elif self.player == 1:
             self.turnLabel.setText("Your Turn!")
 
+    def drop_2(self,):
+        pass
+
     def drop(self, col):
         if self.connect_four_board.game_over == 1:
             return
@@ -388,8 +471,8 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
             return
         if self.player == HUMAN:
             self.pushButtons[row][col].setStyleSheet("background-color: red;")
-            win_pos_list = self.connect_four_board.winning_move(self.player)
-            print(self.connect_four_board.win_percent())
+            win_pos_list = self.connect_four_board.winning_move(self.connect_four_board.board)[0]
+            # print(self.connect_four_board.win_percent(self.connect_four_board.board))
 
             if len(win_pos_list) is not 0:
                 self.turnLabel.setText("")
@@ -401,11 +484,13 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
 
             self.flip_turn()
             self.player = (self.player + 1) % 2
+            self.mythread = MyThread(self, self.connect_four_board)
+            self.mythread.start()
 
         elif self.player == BOT:
             self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
-            win_pos_list = self.connect_four_board.winning_move(self.player)
-            print(self.connect_four_board.win_percent())
+            win_pos_list = self.connect_four_board.winning_move(self.connect_four_board.board)[0]
+            # print(self.connect_four_board.win_percent(self.connect_four_board.board))
 
             if len(win_pos_list) is not 0:
                 self.winLabel.setText("Computer WoN !!!")
