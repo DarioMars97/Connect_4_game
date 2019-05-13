@@ -71,7 +71,7 @@ class ConnectFourBoard:
                     if self.board[row][col] == self.board[row+1][col+1] == self.board[row+2][col+2] == self.board[row+3][col+3] != 0:
                         self.game_over = 1
                         self.winner = player
-                        return [[row,col],[row+1,col+1],[row+2,col+2],[row+2,col+3]]
+                        return [[row,col],[row+1,col+1],[row+2,col+2],[row+3,col+3]]
 
                 else:
                     if self.board[row][col] == self.board[row-1][col+1] == self.board[row-2][col+2] == self.board[row-3][col+3] != 0:
