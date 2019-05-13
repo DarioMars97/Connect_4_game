@@ -38,6 +38,12 @@ class ConnectFourBoard:
     def __init__(self):
         self.board = np.zeros((6, 7))
 
+    def clear(self):
+        self.board.fill(0)
+        self.game_over = 0
+        self.winner = 0
+        self.level = 0
+
     def set_level(self, level):
         self.level = level
 
@@ -103,6 +109,8 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
 
         self.sleepButton.clicked.connect(self.sleeep)
         self.playNowButton.clicked.connect(self.terminate)
+
+        self.playAgainButton.clicked.connect(self.play_again)
 
         self.pushButtons = [
             [self.pb00, self.pb01, self.pb02, self.pb03, self.pb04, self.pb05, self.pb06],
@@ -179,6 +187,21 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
             self.connect_four_board.set_level(2)
         elif self.levelComboBox.currentText() == "Hard":
             self.connect_four_board.set_level(3)
+
+    def play_again(self):
+        self.connect_four_board.clear()
+        self.player = randint(0, 1)
+
+        if self.player == 1:
+            self.turnLabel.setText("Computer Turn!")
+        elif self.player == 0:
+            self.turnLabel.setText("Your Turn!")
+
+        self.winLabel.setText("")
+
+        for r in range(6):
+            for c in range(7):
+                self.pushButtons[r][c].setStyleSheet("background-color: gray;")
 
     def load(self):
         name, _ = QFileDialog.getOpenFileName(self, 'Open File')
