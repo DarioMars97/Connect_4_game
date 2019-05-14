@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import *
 import sys
 import numpy as np
 import json
-import dola
+import GUI
 from random import randint, shuffle, choice
 from math import inf
 
@@ -34,6 +34,7 @@ class MyThread(QThread):
                 self.gui.pushButtons[0][col].click()
                 self.gui.playNowButton.setEnabled(False)
                 self.connect_four.game_over = 0
+
             else:
                 break
 
@@ -41,13 +42,15 @@ class MyThread(QThread):
         self.wait()
 
     def stop(self):
+        # print(BEST_COL)
         if BEST_COL != -1:
             self.quit_flag = True
             # self.connect_four.drop(col, BOT)
+
             self.connect_four.game_over = 0
             self.gui.pushButtons[0][BEST_COL].click()
             self.gui.playNowButton.setEnabled(False)
-
+            # BEST_COL = -1
         self.terminate()
 
 
@@ -188,7 +191,7 @@ class ConnectFourBoard:
                 # print(value)
                 if alpha >= beta:
                     break
-
+            print(value)
             return value, best_col
         elif minimizer:
             value = inf
@@ -207,7 +210,7 @@ class ConnectFourBoard:
                 # print(value)
                 if alpha >= beta:
                     break
-            # print(value)
+            print(value)
             return value, best_col
 
     def winning_move(self, board):
@@ -234,7 +237,7 @@ class ConnectFourBoard:
         return [], False
 
 
-class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
+class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setupUi(self)
@@ -250,7 +253,7 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         self.saveButton.clicked.connect(self.browse_and_save)
         self.loadButton.clicked.connect(self.load)
 
-        self.sleepButton.clicked.connect(self.sleeep)
+        # self.sleepButton.clicked.connect(self.sleeep)
         self.playNowButton.clicked.connect(self.terminate)
 
         self.playAgainButton.clicked.connect(self.play_again)
@@ -312,11 +315,6 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         self.pb16.clicked.connect(lambda: self.drop(6))
         self.pb06.clicked.connect(lambda: self.drop(6))
 
-    def sleeep(self):
-        print("Started")
-        self.t = MyThread()
-        self.t.start()
-
     def terminate(self):
         self.mythread.stop()
 
@@ -328,7 +326,7 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
         elif self.levelComboBox.currentText() == "Medium":
             self.connect_four_board.set_level(5)
         elif self.levelComboBox.currentText() == "Hard":
-            self.connect_four_board.set_level(7)
+            self.connect_four_board.set_level(8)
 
     def play_again(self):
         self.connect_four_board.clear()
@@ -402,9 +400,9 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
             if len(win_pos_list) is not 0:
                 self.turnLabel.setText("")
                 self.winLabel.setText("You WoN !!!")
-
+                self.connect_four_board.game_over=1
                 for i in win_pos_list:
-                    self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid #660066;" )
+                    self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid black;" )
                 return
 
             self.flip_turn()
@@ -420,9 +418,9 @@ class ConnectFourDola(QMainWindow, dola.Ui_MainWindow):
             if len(win_pos_list) is not 0:
                 self.winLabel.setText("Computer WoN !!!")
                 self.turnLabel.setText("")
-
+                self.connect_four_board.game_over = 1
                 for i in win_pos_list:
-                    self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid #660066;" )
+                    self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid black;" )
                 return
 
             self.flip_turn()
