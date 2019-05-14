@@ -13,7 +13,7 @@ from time import sleep
 HUMAN = 0
 BOT = 1
 BEST_COL = -1
-
+FLAG = True
 
 class TimeThread(QThread):
     def __init__(self, gui):
@@ -34,7 +34,7 @@ class TimeThread(QThread):
                 break
 
         self.quit()
-        self.wait()
+        # self.wait()
 
 class MyThread(QThread):
     def __init__(self, gui, connectFour):
@@ -98,6 +98,7 @@ class ConnectFourBoard:
         self.game_over = 0
         self.winner = 0
         self.best_col = -1
+        self.player = HUMAN
 
     def set_level(self, level):
         self.level = level
@@ -220,7 +221,7 @@ class ConnectFourBoard:
                 # print(value)
                 if alpha >= beta:
                     break
-            print(value)
+            # print(value)
             return value, best_col
         elif minimizer:
             value = inf
@@ -239,7 +240,7 @@ class ConnectFourBoard:
                 # print(value)
                 if alpha >= beta:
                     break
-            print(value)
+            # print(value)
             return value, best_col
 
     def winning_move(self, board):
@@ -281,11 +282,11 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         self.startButton.clicked.connect(self.start)
         self.saveButton.clicked.connect(self.browse_and_save)
         self.loadButton.clicked.connect(self.load)
-
+        self.radioButton.setChecked(True)
         self.playNowButton.clicked.connect(self.terminate)
-
+        self.custom.clicked.connect(self.custom_board)
         self.playAgainButton.clicked.connect(self.play_again)
-
+        self.okb.clicked.connect(self.creat_custom)
         self.pushButtons = [
             [self.pb00, self.pb01, self.pb02, self.pb03, self.pb04, self.pb05, self.pb06],
             [self.pb10, self.pb11, self.pb12, self.pb13, self.pb14, self.pb15, self.pb16],
@@ -351,12 +352,26 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         self.connect_four_board = ConnectFourBoard()
         if self.levelComboBox.currentText() == "Easy":
             self.connect_four_board.set_level(3)
+            self.curlevel.setText("Easy")
         elif self.levelComboBox.currentText() == "Medium":
             self.connect_four_board.set_level(5)
+            self.curlevel.setText("Medium")
         elif self.levelComboBox.currentText() == "Hard":
             self.connect_four_board.set_level(7)
+            self.curlevel.setText("Hard")
+        self.okb.hide()
 
     def play_again(self):
+        if self.radioButton.isChecked():
+            self.connect_four_board.level = 3
+            self.curlevel.setText("Easy")
+        elif self.radioButton_2.isChecked():
+            self.connect_four_board.level = 5
+            self.curlevel.setText("Medium")
+        else:
+            self.connect_four_board.level = 7
+            self.curlevel.setText("Hard")
+        # print(self.connect_four_board.level)
         self.connect_four_board.clear()
         # self.player = HUMAN
         self.turnLabel.setText("Your Turn!")
@@ -369,7 +384,7 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
 
     def load(self):
         name, _ = QFileDialog.getOpenFileName(self, 'Open File')
-        if name is None:
+        if name is '':
             return
         my_file = open(name, 'r')
         # json_obj = codecs.open(name, 'r', encoding='utf-8').read()
@@ -377,7 +392,7 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         board_board = json.loads(json_obj)
         my_file.close()
 
-        self.tabWidget.setCurrentIndex(1)
+        # self.tabWidget.setCurrentIndex(0)
         self.connect_four_board = ConnectFourBoard()
         self.connect_four_board.board = np.array(board_board["board"])
         self.player = board_board["player"]
@@ -389,6 +404,12 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         # elif self.levelComboBox.currentText() == "Hard":
         #     self.connect_four_board.set_level(3)
         self.connect_four_board.set_level(board_board["level"])
+        if board_board["level"] == 3:
+            self.curlevel.setText("Easy")
+        elif board_board["level"] == 5:
+            self.curlevel.setText("Medium")
+        else:
+            self.curlevel.setText("Hard")
         for r in range(6):
             for c in range(7):
                 if self.connect_four_board.board[r][c] == 1:
@@ -399,12 +420,15 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
     def browse_and_save(self):
         save_file, _ = QFileDialog.getSaveFileName(caption="Save File As", directory=".",
                                                 filter=".txt")
-        if save_file is None:
+        if save_file is '':
             return
         with open(save_file, 'w') as outfile:
             board_bourd = self.connect_four_board.board.tolist()
             player = self.player
-            board = {"board": board_bourd, "player": player, "level": self.connect_four_board.level}
+            if FLAG:
+                board = {"board": board_bourd, "player": player, "level": self.connect_four_board.level}
+            else:
+                board = {"board": board_bourd, "player": (player+1)%2, "level": self.connect_four_board.level}
             json.dump(board, outfile)
 
     def flip_turn(self):
@@ -415,55 +439,121 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         elif self.player == 1:
             self.turnLabel.setText("Your Turn!")
 
-    def drop_2(self,):
-        pass
+    def custom_board(self,):
+        global FLAG
+        self.connect_four_board.clear()
+        # self.player = HUMAN
+        self.turnLabel.setText("Your Turn!")
+
+        self.winLabel.setText("")
+
+        for r in range(6):
+            for c in range(7):
+                self.pushButtons[r][c].setStyleSheet("background-color: gray;")
+        self.playAgainButton.hide()
+        self.custom.hide()
+        self.loadButton.hide()
+        self.playNowButton.hide()
+        self.saveButton.hide()
+        self.label.hide()
+        self.spinBox.hide()
+        self.okb.show()
+        FLAG = False
+
+
+
+
+    def creat_custom(self):
+        global FLAG
+        FLAG = True
+        self.browse_and_save()
 
     def drop(self, col):
-        if self.connect_four_board.game_over == 1:
-            return
-        row = self.connect_four_board.drop(col, self.player)
+        # self.playNowButton.hide()
 
-        if row == -1:
-            return
-        if self.player == HUMAN:
-            self.pushButtons[row][col].setStyleSheet("background-color: red;")
-            win_pos_list = self.connect_four_board.winning_move(self.connect_four_board.board)[0]
-            # print(self.connect_four_board.win_percent(self.connect_four_board.board))
-
-            if len(win_pos_list) is not 0:
-                self.turnLabel.setText("")
-                self.winLabel.setText("You WoN !!!")
-                self.connect_four_board.game_over=1
-                for i in win_pos_list:
-                    self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid black;" )
+        if FLAG:
+            if self.connect_four_board.game_over == 1:
                 return
+            row = self.connect_four_board.drop(col, self.player)
 
-            self.flip_turn()
-            self.player = (self.player + 1) % 2
-            self.spinBox.setEnabled(False)
-            self.mythread = MyThread(self, self.connect_four_board)
-            self.mythread.start()
-            if self.spinBox.value() > 0:
-                self.time_thread = TimeThread(self)
-                self.time_thread.start()
-
-        elif self.player == BOT:
-            self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
-            win_pos_list = self.connect_four_board.winning_move(self.connect_four_board.board)[0]
-            # print(self.connect_four_board.win_percent(self.connect_four_board.board))
-
-            if len(win_pos_list) is not 0:
-                self.winLabel.setText("Computer WoN !!!")
-                self.turnLabel.setText("")
-                self.connect_four_board.game_over = 1
-                for i in win_pos_list:
-                    self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid black;" )
+            if row == -1:
                 return
+            if self.player == HUMAN:
+                self.pushButtons[row][col].setStyleSheet("background-color: red;")
+                win_pos_list = self.connect_four_board.winning_move(self.connect_four_board.board)[0]
+                # print(self.connect_four_board.win_percent(self.connect_four_board.board))
 
-            self.flip_turn()
-            self.player = (self.player + 1) % 2
+                if len(win_pos_list) is not 0:
+                    self.turnLabel.setText("")
+                    self.winLabel.setText("You WoN !!!")
+                    self.connect_four_board.game_over=1
+                    for i in win_pos_list:
+                        self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid black;" )
+                    return
 
+                self.flip_turn()
+                self.player = (self.player + 1) % 2
+                self.spinBox.setEnabled(False)
+                self.mythread = MyThread(self, self.connect_four_board)
+                self.mythread.start()
+                if self.spinBox.value() > 0:
+                    self.time_thread = TimeThread(self)
+                    self.time_thread.start()
 
+            elif self.player == BOT:
+                self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
+                win_pos_list = self.connect_four_board.winning_move(self.connect_four_board.board)[0]
+                # print(self.connect_four_board.win_percent(self.connect_four_board.board))
+
+                if len(win_pos_list) is not 0:
+                    self.winLabel.setText("Computer WoN !!!")
+                    self.turnLabel.setText("")
+                    self.connect_four_board.game_over = 1
+                    for i in win_pos_list:
+                        self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid black;" )
+                    return
+
+                self.flip_turn()
+                self.player = (self.player + 1) % 2
+
+        else:
+            if self.connect_four_board.game_over == 1:
+                return
+            row = self.connect_four_board.drop(col, self.player)
+
+            if row == -1:
+                return
+            if self.player == HUMAN:
+                self.pushButtons[row][col].setStyleSheet("background-color: red;")
+                win_pos_list = self.connect_four_board.winning_move(self.connect_four_board.board)[0]
+                # print(self.connect_four_board.win_percent(self.connect_four_board.board))
+
+                if len(win_pos_list) is not 0:
+                    self.turnLabel.setText("")
+                    self.winLabel.setText("You WoN !!!")
+                    self.connect_four_board.game_over=1
+                    for i in win_pos_list:
+                        self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid black;" )
+                    return
+
+                self.flip_turn()
+                self.player = (self.player + 1) % 2
+
+            elif self.player == BOT:
+                self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
+                win_pos_list = self.connect_four_board.winning_move(self.connect_four_board.board)[0]
+                # print(self.connect_four_board.win_percent(self.connect_four_board.board))
+
+                if len(win_pos_list) is not 0:
+                    self.winLabel.setText("Computer WoN !!!")
+                    self.turnLabel.setText("")
+                    self.connect_four_board.game_over = 1
+                    for i in win_pos_list:
+                        self.pushButtons[i[0]][i[1]].setStyleSheet(self.pushButtons[i[0]][i[1]].styleSheet() +"border: 10px solid black;" )
+                    return
+
+                self.flip_turn()
+                self.player = (self.player + 1) % 2
 
 
 
