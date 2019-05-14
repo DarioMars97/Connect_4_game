@@ -425,10 +425,7 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         with open(save_file, 'w') as outfile:
             board_bourd = self.connect_four_board.board.tolist()
             player = self.player
-            if FLAG:
-                board = {"board": board_bourd, "player": player, "level": self.connect_four_board.level}
-            else:
-                board = {"board": board_bourd, "player": (player+1)%2, "level": self.connect_four_board.level}
+            board = {"board": board_bourd, "player": player, "level": self.connect_four_board.level}
             json.dump(board, outfile)
 
     def flip_turn(self):
