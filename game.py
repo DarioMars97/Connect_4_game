@@ -458,6 +458,8 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         self.label.hide()
         self.spinBox.hide()
         self.okb.show()
+        self.curlevel.hide()
+        self.label_3.hide()
         FLAG = False
 
 
@@ -466,7 +468,25 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
     def creat_custom(self):
         global FLAG
         FLAG = True
-        self.browse_and_save()
+        self.playAgainButton.show()
+        self.custom.show()
+        self.loadButton.show()
+        self.playNowButton.show()
+        self.saveButton.show()
+        self.label.show()
+        self.spinBox.show()
+        self.okb.hide()
+        self.curlevel.show()
+        self.label_3.show()
+        if self.radioButton.isChecked():
+            self.connect_four_board.level = 3
+            self.curlevel.setText("Easy")
+        elif self.radioButton_2.isChecked():
+            self.connect_four_board.level = 5
+            self.curlevel.setText("Medium")
+        else:
+            self.connect_four_board.level = 7
+            self.curlevel.setText("Hard")
 
     def drop(self, col):
         # self.playNowButton.hide()
