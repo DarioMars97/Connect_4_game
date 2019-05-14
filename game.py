@@ -1,11 +1,10 @@
 from PyQt5.QtCore import *
-# from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import sys
 import numpy as np
 import json
 import GUI
-from random import randint, shuffle, choice
+from random import shuffle, choice
 from math import inf
 from time import sleep
 
@@ -13,7 +12,7 @@ from time import sleep
 HUMAN = 0
 BOT = 1
 BEST_COL = -1
-FLAG = True
+CUSTOM_BOARD_FLAG = True
 
 class TimeThread(QThread):
     def __init__(self, gui):
@@ -34,7 +33,7 @@ class TimeThread(QThread):
                 break
 
         self.quit()
-        # self.wait()
+        self.wait()
 
 class MyThread(QThread):
     def __init__(self, gui, connectFour):
@@ -71,8 +70,6 @@ class MyThread(QThread):
         global BEST_COL
         if BEST_COL != -1:
             self.quit_flag = True
-            # self.connect_four.drop(col, BOT)
-
             self.connect_four.game_over = 0
             self.gui.pushButtons[0][BEST_COL].click()
             self.gui.playNowButton.setEnabled(False)
@@ -98,7 +95,6 @@ class ConnectFourBoard:
         self.game_over = 0
         self.winner = 0
         self.best_col = -1
-        self.player = HUMAN
 
     def set_level(self, level):
         self.level = level
@@ -267,12 +263,14 @@ class ConnectFourBoard:
         return [], False
 
 
-class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
+class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setupUi(self)
 
         self.player = HUMAN
+        self.mythread = None
+        self.time_thread = None
         self.turnLabel.setText("Your Turn!")
         self.playNowButton.setEnabled(False)
 
@@ -373,7 +371,7 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
             self.curlevel.setText("Hard")
         # print(self.connect_four_board.level)
         self.connect_four_board.clear()
-        # self.player = HUMAN
+        self.player = HUMAN
         self.turnLabel.setText("Your Turn!")
 
         self.winLabel.setText("")
@@ -383,6 +381,10 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
                 self.pushButtons[r][c].setStyleSheet("background-color: gray;")
 
     def load(self):
+        if self.mythread is not None:
+            self.mythread.terminate()
+        if self.time_thread is not None:
+            self.time_thread.terminate()
         name, _ = QFileDialog.getOpenFileName(self, 'Open File')
         if name is '':
             return
@@ -396,13 +398,6 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         self.connect_four_board = ConnectFourBoard()
         self.connect_four_board.board = np.array(board_board["board"])
         self.player = board_board["player"]
-
-        # if self.levelComboBox.currentText() == "Easy":
-        #     self.connect_four_board.set_level(1)
-        # elif self.levelComboBox.currentText() == "Medium":
-        #     self.connect_four_board.set_level(2)
-        # elif self.levelComboBox.currentText() == "Hard":
-        #     self.connect_four_board.set_level(3)
         self.connect_four_board.set_level(board_board["level"])
         if board_board["level"] == 3:
             self.curlevel.setText("Easy")
@@ -416,6 +411,19 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
                     self.pushButtons[r][c].setStyleSheet("background-color: red;")
                 elif self.connect_four_board.board[r][c] == 2:
                     self.pushButtons[r][c].setStyleSheet("background-color: yellow;")
+                else:
+                    self.pushButtons[r][c].setStyleSheet("background-color: gray;")
+
+        if self.player == HUMAN:
+            self.turnLabel.setText("Your Turn!")
+
+        elif self.player == BOT:
+            self.turnLabel.setText("Computer Turn!")
+
+        if self.player == BOT:
+            self.spinBox.setEnabled(False)
+            self.mythread = MyThread(self, self.connect_four_board)
+            self.mythread.start()
 
     def browse_and_save(self):
         save_file, _ = QFileDialog.getSaveFileName(caption="Save File As", directory=".",
@@ -430,16 +438,20 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
 
     def flip_turn(self):
         # self.player is the previous player
-        if self.player == 0:
+        if self.player == HUMAN:
             self.turnLabel.setText("Computer Turn!")
 
-        elif self.player == 1:
+        elif self.player == BOT:
             self.turnLabel.setText("Your Turn!")
 
     def custom_board(self,):
-        global FLAG
+        if self.mythread is not None:
+            self.mythread.terminate()
+        if self.time_thread is not None:
+            self.time_thread.terminate()
+        global CUSTOM_BOARD_FLAG
         self.connect_four_board.clear()
-        # self.player = HUMAN
+        self.player = HUMAN
         self.turnLabel.setText("Your Turn!")
 
         self.winLabel.setText("")
@@ -457,14 +469,14 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         self.okb.show()
         self.curlevel.hide()
         self.label_3.hide()
-        FLAG = False
+        CUSTOM_BOARD_FLAG = False
 
 
 
 
     def creat_custom(self):
-        global FLAG
-        FLAG = True
+        global CUSTOM_BOARD_FLAG
+        CUSTOM_BOARD_FLAG = True
         self.playAgainButton.show()
         self.custom.show()
         self.loadButton.show()
@@ -484,11 +496,15 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         else:
             self.connect_four_board.level = 7
             self.curlevel.setText("Hard")
+        if self.player == BOT:
+            self.spinBox.setEnabled(False)
+            self.mythread = MyThread(self, self.connect_four_board)
+            self.mythread.start()
 
     def drop(self, col):
         # self.playNowButton.hide()
 
-        if FLAG:
+        if CUSTOM_BOARD_FLAG:
             if self.connect_four_board.game_over == 1:
                 return
             row = self.connect_four_board.drop(col, self.player)
@@ -575,6 +591,6 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
 
 
 app = QApplication(sys.argv)
-game = ConnectFourDola()
+game = ConnectFourGUI()
 game.show()
 app.exec_()
