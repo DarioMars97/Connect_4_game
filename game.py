@@ -25,6 +25,7 @@ class MyThread(QThread):
     def run(self):
         while True:
             if not self.quit_flag:
+                self.connect_four.game_over = 1
                 board_copy = self.connect_four.board.copy()
                 _, col = self.connect_four.minimax(board_copy, self.connect_four.level, -inf, inf, maximizer=True)
                 self.connect_four.best_col = col
@@ -32,6 +33,7 @@ class MyThread(QThread):
                 # self.connect_four.drop(col, BOT)
                 self.gui.pushButtons[0][col].click()
                 self.gui.playNowButton.setEnabled(False)
+                self.connect_four.game_over = 0
             else:
                 break
 
@@ -42,8 +44,10 @@ class MyThread(QThread):
         if BEST_COL != -1:
             self.quit_flag = True
             # self.connect_four.drop(col, BOT)
+            self.connect_four.game_over = 0
             self.gui.pushButtons[0][BEST_COL].click()
             self.gui.playNowButton.setEnabled(False)
+
         self.terminate()
 
 
