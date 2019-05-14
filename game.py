@@ -7,12 +7,34 @@ import json
 import GUI
 from random import randint, shuffle, choice
 from math import inf
+from time import sleep
 
 
 HUMAN = 0
 BOT = 1
 BEST_COL = -1
 
+
+class TimeThread(QThread):
+    def __init__(self, gui):
+        super(TimeThread, self).__init__()
+        self.quit_flag = False
+        self.gui = gui
+        self.bro_thread = self.gui.mythread
+
+    def run(self):
+        while True:
+            if not self.quit_flag:
+                value = self.gui.spinBox.value()
+                sleep(value)
+                self.quit_flag = True
+                if BEST_COL != -1:
+                    self.bro_thread.stop(from_thread= True)
+            else:
+                break
+
+        self.quit()
+        self.wait()
 
 class MyThread(QThread):
     def __init__(self, gui, connectFour):
@@ -23,6 +45,7 @@ class MyThread(QThread):
         self.gui.playNowButton.setEnabled(True)
 
     def run(self):
+        global BEST_COL
         while True:
             if not self.quit_flag:
                 self.connect_four.game_over = 1
@@ -34,15 +57,18 @@ class MyThread(QThread):
                 self.gui.pushButtons[0][col].click()
                 self.gui.playNowButton.setEnabled(False)
                 self.connect_four.game_over = 0
-
+                self.gui.spinBox.setEnabled(True)
+                self.gui.spinBox.setValue(0)
+                BEST_COL = -1
             else:
                 break
 
         self.quit()
         self.wait()
 
-    def stop(self):
+    def stop(self, from_thread=False):
         # print(BEST_COL)
+        global BEST_COL
         if BEST_COL != -1:
             self.quit_flag = True
             # self.connect_four.drop(col, BOT)
@@ -50,9 +76,12 @@ class MyThread(QThread):
             self.connect_four.game_over = 0
             self.gui.pushButtons[0][BEST_COL].click()
             self.gui.playNowButton.setEnabled(False)
-            # BEST_COL = -1
+            self.gui.spinBox.setEnabled(True)
+            self.gui.spinBox.setValue(0)
+            BEST_COL = -1
+        if self.gui.spinBox.value() > 0 and not from_thread:
+            self.gui.time_thread.terminate()
         self.terminate()
-
 
 
 class ConnectFourBoard:
@@ -253,7 +282,6 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         self.saveButton.clicked.connect(self.browse_and_save)
         self.loadButton.clicked.connect(self.load)
 
-        # self.sleepButton.clicked.connect(self.sleeep)
         self.playNowButton.clicked.connect(self.terminate)
 
         self.playAgainButton.clicked.connect(self.play_again)
@@ -326,11 +354,11 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         elif self.levelComboBox.currentText() == "Medium":
             self.connect_four_board.set_level(5)
         elif self.levelComboBox.currentText() == "Hard":
-            self.connect_four_board.set_level(8)
+            self.connect_four_board.set_level(7)
 
     def play_again(self):
         self.connect_four_board.clear()
-        self.player = HUMAN
+        # self.player = HUMAN
         self.turnLabel.setText("Your Turn!")
 
         self.winLabel.setText("")
@@ -341,6 +369,8 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
 
     def load(self):
         name, _ = QFileDialog.getOpenFileName(self, 'Open File')
+        if name is None:
+            return
         my_file = open(name, 'r')
         # json_obj = codecs.open(name, 'r', encoding='utf-8').read()
         json_obj = my_file.read()
@@ -352,12 +382,13 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
         self.connect_four_board.board = np.array(board_board["board"])
         self.player = board_board["player"]
 
-        if self.levelComboBox.currentText() == "Easy":
-            self.connect_four_board.set_level(1)
-        elif self.levelComboBox.currentText() == "Medium":
-            self.connect_four_board.set_level(2)
-        elif self.levelComboBox.currentText() == "Hard":
-            self.connect_four_board.set_level(3)
+        # if self.levelComboBox.currentText() == "Easy":
+        #     self.connect_four_board.set_level(1)
+        # elif self.levelComboBox.currentText() == "Medium":
+        #     self.connect_four_board.set_level(2)
+        # elif self.levelComboBox.currentText() == "Hard":
+        #     self.connect_four_board.set_level(3)
+        self.connect_four_board.set_level(board_board["level"])
         for r in range(6):
             for c in range(7):
                 if self.connect_four_board.board[r][c] == 1:
@@ -368,10 +399,12 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
     def browse_and_save(self):
         save_file, _ = QFileDialog.getSaveFileName(caption="Save File As", directory=".",
                                                 filter=".txt")
+        if save_file is None:
+            return
         with open(save_file, 'w') as outfile:
             board_bourd = self.connect_four_board.board.tolist()
             player = self.player
-            board = {"board": board_bourd, "player": player}
+            board = {"board": board_bourd, "player": player, "level": self.connect_four_board.level}
             json.dump(board, outfile)
 
     def flip_turn(self):
@@ -407,8 +440,12 @@ class ConnectFourDola(QMainWindow, GUI.Ui_MainWindow):
 
             self.flip_turn()
             self.player = (self.player + 1) % 2
+            self.spinBox.setEnabled(False)
             self.mythread = MyThread(self, self.connect_four_board)
             self.mythread.start()
+            if self.spinBox.value() > 0:
+                self.time_thread = TimeThread(self)
+                self.time_thread.start()
 
         elif self.player == BOT:
             self.pushButtons[row][col].setStyleSheet("background-color: yellow;")
