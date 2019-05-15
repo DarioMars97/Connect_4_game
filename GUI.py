@@ -509,6 +509,9 @@ class Ui_MainWindow(object):
         self.curlevel.setGeometry(QtCore.QRect(100, 0, 47, 31))
         self.curlevel.setText("")
         self.curlevel.setObjectName("curlevel")
+        self.checkBox = QtWidgets.QCheckBox(self.frame_6)
+        self.checkBox.setGeometry(QtCore.QRect(60, 220, 91, 17))
+        self.checkBox.setObjectName("checkBox")
         self.gridLayout_3.addWidget(self.frame_6, 0, 2, 4, 1)
         self.tabWidget.addTab(self.tab_4, "")
         self.tab = QtWidgets.QWidget()
@@ -598,6 +601,7 @@ class Ui_MainWindow(object):
         self.radioButton_2.setText(_translate("MainWindow", "Medium"))
         self.radioButton_3.setText(_translate("MainWindow", "Hard"))
         self.label_3.setText(_translate("MainWindow", "Current Level :"))
+        self.checkBox.setText(_translate("MainWindow", "verbose mode"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Tab 2"))
         item = self.mainTable.verticalHeaderItem(0)
         item.setText(_translate("MainWindow", "Max Depth"))
@@ -624,5 +628,3 @@ class Ui_MainWindow(object):
         self.label_8.setText(_translate("MainWindow", "Cutoffs :-"))
         self.returnButton.setText(_translate("MainWindow", "O.K."))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Tab 3"))
-
-

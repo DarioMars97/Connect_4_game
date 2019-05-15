@@ -127,7 +127,10 @@ class MyThread(QThread):
     def stop(self, from_thread=False):
         # print(BEST_COL)
         global BEST_COL
-        if BEST_COL != -1:
+        if BEST_COL != -1 and not self.isFinished():
+            if self.isRunning():
+                self.terminate()
+                self.wait()
             self.quit_flag = True
             self.connect_four.game_over = 0
             self.gui.pushButtons[0][BEST_COL].click()
@@ -137,7 +140,8 @@ class MyThread(QThread):
             BEST_COL = -1
         if self.gui.spinBox.value() > 0 and not from_thread:
             self.gui.time_thread.terminate()
-        self.terminate()
+            self.gui.time_thread.wait()
+
 
 
 class ConnectFourBoard:
@@ -627,8 +631,9 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
 
                 self.flip_turn()
                 self.player = (self.player + 1) % 2
-                self.write = WriteThread(self)
-                self.write.start()
+                if self.checkBox.isChecked():
+                    self.write = WriteThread(self)
+                    self.write.start()
 
         else:
             if self.connect_four_board.game_over == 1:
