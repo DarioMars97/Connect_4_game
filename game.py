@@ -80,15 +80,11 @@ class TimeThread(QThread):
         self.bro_thread = self.gui.mythread
 
     def run(self):
-        while True:
-            if not self.quit_flag:
-                value = self.gui.spinBox.value()
-                sleep(value)
-                self.quit_flag = True
-                if BEST_COL != -1:
-                    self.bro_thread.stop(from_thread= True)
-            else:
-                break
+        value = self.gui.spinBox.value()
+        sleep(value)
+        self.quit_flag = True
+        if BEST_COL != -1:
+            self.bro_thread.stop(from_thread= True)
 
         self.quit()
         self.wait()
@@ -104,22 +100,18 @@ class MyThread(QThread):
 
     def run(self):
         global BEST_COL
-        while True:
-            if not self.quit_flag:
-                self.connect_four.game_over = 1
-                board_copy = self.connect_four.board.copy()
-                _, col = self.connect_four.minimax(board_copy, self.connect_four.level, -inf, inf, maximizer=True)
-                self.connect_four.best_col = col
-                self.quit_flag = True
-                # self.connect_four.drop(col, BOT)
-                self.gui.pushButtons[0][col].click()
-                self.gui.playNowButton.setEnabled(False)
-                self.connect_four.game_over = 0
-                self.gui.spinBox.setEnabled(True)
-                # self.gui.spinBox.setValue(0)
-                BEST_COL = -1
-            else:
-                break
+        self.connect_four.game_over = 1
+        board_copy = self.connect_four.board.copy()
+        _, col = self.connect_four.minimax(board_copy, self.connect_four.level, -inf, inf, maximizer=True)
+        self.connect_four.best_col = col
+        self.quit_flag = True
+        # self.connect_four.drop(col, BOT)
+        self.gui.pushButtons[0][col].click()
+        self.gui.playNowButton.setEnabled(False)
+        self.connect_four.game_over = 0
+        self.gui.spinBox.setEnabled(True)
+        # self.gui.spinBox.setValue(0)
+        BEST_COL = -1
 
         self.quit()
         self.wait()
@@ -127,10 +119,7 @@ class MyThread(QThread):
     def stop(self, from_thread=False):
         # print(BEST_COL)
         global BEST_COL
-        if BEST_COL != -1 and not self.isFinished():
-            if self.isRunning():
-                self.terminate()
-                self.wait()
+        if BEST_COL != -1:
             self.quit_flag = True
             self.connect_four.game_over = 0
             self.gui.pushButtons[0][BEST_COL].click()
@@ -138,9 +127,11 @@ class MyThread(QThread):
             self.gui.spinBox.setEnabled(True)
             # self.gui.spinBox.setValue(0)
             BEST_COL = -1
+
+        self.terminate()
+
         if self.gui.spinBox.value() > 0 and not from_thread:
             self.gui.time_thread.terminate()
-            self.gui.time_thread.wait()
 
 
 
@@ -567,6 +558,8 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
         self.okb.show()
         self.curlevel.hide()
         self.label_3.hide()
+        self.checkBox_2.hide()
+        self.checkBox.hide()
         CUSTOM_BOARD_FLAG = False
 
     def return_from_verbose_mode(self):
@@ -585,6 +578,8 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
         self.okb.hide()
         self.curlevel.show()
         self.label_3.show()
+        self.checkBox_2.show()
+        self.checkBox.show()
         if self.radioButton.isChecked():
             self.connect_four_board.level = 3
             self.curlevel.setText("Easy")
