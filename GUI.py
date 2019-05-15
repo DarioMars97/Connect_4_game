@@ -2,11 +2,12 @@
 
 # Form implementation generated from reading ui file 'gui.ui'
 #
-# Created by: PyQt5 UI code generator 5.11.3
+# Created by: PyQt5 UI code generator 5.12.2
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -510,6 +511,54 @@ class Ui_MainWindow(object):
         self.curlevel.setObjectName("curlevel")
         self.gridLayout_3.addWidget(self.frame_6, 0, 2, 4, 1)
         self.tabWidget.addTab(self.tab_4, "")
+        self.tab = QtWidgets.QWidget()
+        self.tab.setObjectName("tab")
+        self.mainTable = QtWidgets.QTableWidget(self.tab)
+        self.mainTable.setGeometry(QtCore.QRect(40, 20, 531, 181))
+        self.mainTable.setObjectName("mainTable")
+        self.mainTable.setColumnCount(1)
+        self.mainTable.setRowCount(4)
+        item = QtWidgets.QTableWidgetItem()
+        self.mainTable.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.mainTable.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.mainTable.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.mainTable.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.mainTable.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsEnabled)
+        self.mainTable.setItem(0, 0, item)
+        self.nodesTable = QtWidgets.QTableWidget(self.tab)
+        self.nodesTable.setGeometry(QtCore.QRect(40, 250, 261, 321))
+        self.nodesTable.setObjectName("nodesTable")
+        self.nodesTable.setColumnCount(2)
+        self.nodesTable.setRowCount(0)
+        item = QtWidgets.QTableWidgetItem()
+        self.nodesTable.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.nodesTable.setHorizontalHeaderItem(1, item)
+        self.cutoffsTable = QtWidgets.QTableWidget(self.tab)
+        self.cutoffsTable.setGeometry(QtCore.QRect(310, 250, 261, 321))
+        self.cutoffsTable.setObjectName("cutoffsTable")
+        self.cutoffsTable.setColumnCount(2)
+        self.cutoffsTable.setRowCount(0)
+        item = QtWidgets.QTableWidgetItem()
+        self.cutoffsTable.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.cutoffsTable.setHorizontalHeaderItem(1, item)
+        self.label_7 = QtWidgets.QLabel(self.tab)
+        self.label_7.setGeometry(QtCore.QRect(40, 220, 111, 21))
+        self.label_7.setObjectName("label_7")
+        self.label_8 = QtWidgets.QLabel(self.tab)
+        self.label_8.setGeometry(QtCore.QRect(310, 220, 111, 21))
+        self.label_8.setObjectName("label_8")
+        self.returnButton = QtWidgets.QToolButton(self.tab)
+        self.returnButton.setGeometry(QtCore.QRect(700, 450, 161, 51))
+        self.returnButton.setObjectName("returnButton")
+        self.tabWidget.addTab(self.tab, "")
         self.gridLayout_2.addWidget(self.tabWidget, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -521,7 +570,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -550,4 +599,30 @@ class Ui_MainWindow(object):
         self.radioButton_3.setText(_translate("MainWindow", "Hard"))
         self.label_3.setText(_translate("MainWindow", "Current Level :"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Tab 2"))
+        item = self.mainTable.verticalHeaderItem(0)
+        item.setText(_translate("MainWindow", "Max Depth"))
+        item = self.mainTable.verticalHeaderItem(1)
+        item.setText(_translate("MainWindow", "Avg Branching Factor of all Nodes"))
+        item = self.mainTable.verticalHeaderItem(2)
+        item.setText(_translate("MainWindow", "# Leaf Nodes Evaluated "))
+        item = self.mainTable.verticalHeaderItem(3)
+        item.setText(_translate("MainWindow", "# Cutoffs"))
+        item = self.mainTable.horizontalHeaderItem(0)
+        item.setText(_translate("MainWindow", "Value"))
+        __sortingEnabled = self.mainTable.isSortingEnabled()
+        self.mainTable.setSortingEnabled(False)
+        self.mainTable.setSortingEnabled(__sortingEnabled)
+        item = self.nodesTable.horizontalHeaderItem(0)
+        item.setText(_translate("MainWindow", "Node"))
+        item = self.nodesTable.horizontalHeaderItem(1)
+        item.setText(_translate("MainWindow", "Score"))
+        item = self.cutoffsTable.horizontalHeaderItem(0)
+        item.setText(_translate("MainWindow", "Type"))
+        item = self.cutoffsTable.horizontalHeaderItem(1)
+        item.setText(_translate("MainWindow", "Level"))
+        self.label_7.setText(_translate("MainWindow", "Nodes :-"))
+        self.label_8.setText(_translate("MainWindow", "Cutoffs :-"))
+        self.returnButton.setText(_translate("MainWindow", "O.K."))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Tab 3"))
+
 

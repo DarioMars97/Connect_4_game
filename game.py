@@ -13,6 +13,64 @@ HUMAN = 0
 BOT = 1
 BEST_COL = -1
 CUSTOM_BOARD_FLAG = True
+VERBOSE_MODE = {"max_depth": 0,
+                "average_branching_factor": [],
+                "leaf_nodes": [],
+                "cutoffs": []}
+
+
+class WriteThread(QThread):
+    def __init__(self, gui):
+        super(WriteThread, self).__init__()
+        self.quit_flag = False
+        self.gui = gui
+
+    def run(self):
+        while True:
+            if not self.quit_flag:
+                main_table = self.gui.mainTable
+                nodes_table = self.gui.nodesTable
+                cutoffs_table = self.gui.cutoffsTable
+                branching_factor = VERBOSE_MODE["average_branching_factor"]
+                avg = sum(branching_factor)//len(branching_factor)
+                nodes_no = len(VERBOSE_MODE["leaf_nodes"])
+                cutoffs_no = len(VERBOSE_MODE["cutoffs"])
+                main_table.setItem(0, 1, QTableWidgetItem(str(avg)))
+                main_table.setItem(-1, 1, QTableWidgetItem(str(VERBOSE_MODE["max_depth"])))
+                main_table.setItem(1, 1, QTableWidgetItem(str(nodes_no)))
+                main_table.setItem(2, 1, QTableWidgetItem(str(cutoffs_no)))
+
+                nodes_table.setRowCount(0)
+                nodes_table.setRowCount(nodes_no)
+                for i in range(nodes_no):
+                    node = VERBOSE_MODE["leaf_nodes"][i]
+                    position = (node["node_level"], node["node_number"])
+                    score = node["score"]
+                    nodes_table.setItem(i, 0, QTableWidgetItem(str(position)))
+                    nodes_table.setItem(i, 1, QTableWidgetItem(str(score)))
+
+                cutoffs_table.setRowCount(0)
+                cutoffs_table.setRowCount(cutoffs_no)
+                for i in range(cutoffs_no):
+                    cutoffs = VERBOSE_MODE["cutoffs"][i]
+                    type = cutoffs["type"]
+                    level = cutoffs["level"]
+                    cutoffs_table.setItem(i, 0, QTableWidgetItem(type))
+                    cutoffs_table.setItem(i, 1, QTableWidgetItem(str(level)))
+
+                sleep(1)
+                self.gui.tabWidget.setCurrentIndex(2)
+                VERBOSE_MODE["max_depth"] = 0
+                VERBOSE_MODE["average_branching_factor"].clear()
+                VERBOSE_MODE["leaf_nodes"].clear()
+                VERBOSE_MODE["cutoffs"].clear()
+                self.quit_flag = True
+            else:
+                break
+
+        self.quit()
+        self.wait()
+
 
 class TimeThread(QThread):
     def __init__(self, gui):
@@ -34,6 +92,7 @@ class TimeThread(QThread):
 
         self.quit()
         self.wait()
+
 
 class MyThread(QThread):
     def __init__(self, gui, connectFour):
@@ -57,7 +116,7 @@ class MyThread(QThread):
                 self.gui.playNowButton.setEnabled(False)
                 self.connect_four.game_over = 0
                 self.gui.spinBox.setEnabled(True)
-                self.gui.spinBox.setValue(0)
+                # self.gui.spinBox.setValue(0)
                 BEST_COL = -1
             else:
                 break
@@ -74,7 +133,7 @@ class MyThread(QThread):
             self.gui.pushButtons[0][BEST_COL].click()
             self.gui.playNowButton.setEnabled(False)
             self.gui.spinBox.setEnabled(True)
-            self.gui.spinBox.setValue(0)
+            # self.gui.spinBox.setValue(0)
             BEST_COL = -1
         if self.gui.spinBox.value() > 0 and not from_thread:
             self.gui.time_thread.terminate()
@@ -186,6 +245,8 @@ class ConnectFourBoard:
     def minimax(self, board_copy, depth, alpha, beta, maximizer=False, minimizer=False):
         terminal_node = self.terminal_node(board_copy)
         global BEST_COL
+        global VERBOSE_MODE
+        VERBOSE_MODE["max_depth"] = max(VERBOSE_MODE["max_depth"], depth)
         if depth == 0 or terminal_node:
             if terminal_node:
                 win_places, is_winning = self.winning_move(board_copy)
@@ -203,12 +264,17 @@ class ConnectFourBoard:
         if maximizer:
             value = -inf
             valid_locations = self.get_valid_locations(board_copy)
+            VERBOSE_MODE["average_branching_factor"].append(len(valid_locations))
             shuffle(valid_locations)
             best_col = choice(valid_locations)
             for col in valid_locations:
                 copy_board = board_copy.copy()
                 self.drop_simulate(copy_board, col, BOT)
                 score = self.minimax(copy_board, depth-1, alpha, beta, minimizer=True)[0]
+                node = {"node_level": depth,
+                        "node_number": valid_locations.index(col),
+                        "score": score}
+                VERBOSE_MODE["leaf_nodes"].append(node)
                 if score > value:
                     best_col = col
                     BEST_COL = best_col
@@ -216,6 +282,9 @@ class ConnectFourBoard:
                 alpha = max(alpha, value)
                 # print(value)
                 if alpha >= beta:
+                    cutoff = {"type": "beta",
+                              "level": depth}
+                    VERBOSE_MODE["cutoffs"].append(cutoff)
                     break
             # print(value)
             return value, best_col
@@ -228,6 +297,10 @@ class ConnectFourBoard:
                 copy_board = board_copy.copy()
                 self.drop_simulate(copy_board, col, HUMAN)
                 score = self.minimax(copy_board, depth-1, alpha, beta, maximizer=True)[0]
+                node = {"node_level": depth,
+                        "node_number": valid_locations.index(col),
+                        "score": score}
+                VERBOSE_MODE["leaf_nodes"].append(node)
                 if score < value:
                     best_col = col
                     BEST_COL = best_col
@@ -235,6 +308,9 @@ class ConnectFourBoard:
                 beta = min(value, beta)
                 # print(value)
                 if alpha >= beta:
+                    cutoff = {"type": "alpha",
+                              "level": depth}
+                    VERBOSE_MODE["cutoffs"].append(cutoff)
                     break
             # print(value)
             return value, best_col
@@ -285,6 +361,7 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
         self.custom.clicked.connect(self.custom_board)
         self.playAgainButton.clicked.connect(self.play_again)
         self.okb.clicked.connect(self.creat_custom)
+        self.returnButton.clicked.connect(self.return_from_verbose_mode)
         self.pushButtons = [
             [self.pb00, self.pb01, self.pb02, self.pb03, self.pb04, self.pb05, self.pb06],
             [self.pb10, self.pb11, self.pb12, self.pb13, self.pb14, self.pb15, self.pb16],
@@ -397,8 +474,6 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
         json_obj = my_file.read()
         board_board = json.loads(json_obj)
         my_file.close()
-
-        # self.tabWidget.setCurrentIndex(0)
         self.connect_four_board = ConnectFourBoard()
         self.connect_four_board.board = np.array(board_board["board"])
         self.player = board_board["player"]
@@ -475,8 +550,8 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
         self.label_3.hide()
         CUSTOM_BOARD_FLAG = False
 
-
-
+    def return_from_verbose_mode(self):
+        self.tabWidget.setCurrentIndex(1)
 
     def creat_custom(self):
         global CUSTOM_BOARD_FLAG
@@ -552,6 +627,8 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
 
                 self.flip_turn()
                 self.player = (self.player + 1) % 2
+                self.write = WriteThread(self)
+                self.write.start()
 
         else:
             if self.connect_four_board.game_over == 1:
@@ -591,7 +668,6 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
 
                 self.flip_turn()
                 self.player = (self.player + 1) % 2
-
 
 
 app = QApplication(sys.argv)
