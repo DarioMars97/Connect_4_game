@@ -116,7 +116,7 @@ class MyThread(QThread):
                 self.gui.playNowButton.setEnabled(False)
                 self.connect_four.game_over = 0
                 self.gui.spinBox.setEnabled(True)
-                self.gui.spinBox.setValue(0)
+                # self.gui.spinBox.setValue(0)
                 BEST_COL = -1
             else:
                 break
@@ -133,7 +133,7 @@ class MyThread(QThread):
             self.gui.pushButtons[0][BEST_COL].click()
             self.gui.playNowButton.setEnabled(False)
             self.gui.spinBox.setEnabled(True)
-            self.gui.spinBox.setValue(0)
+            # self.gui.spinBox.setValue(0)
             BEST_COL = -1
         if self.gui.spinBox.value() > 0 and not from_thread:
             self.gui.time_thread.terminate()
