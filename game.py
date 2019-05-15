@@ -347,7 +347,8 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setupUi(self)
-
+        self.firstturnstart.setChecked(True)
+        self.checkBox_2.setChecked(True)
         self.player = HUMAN
         self.mythread = None
         self.time_thread = None
@@ -439,8 +440,15 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
             self.connect_four_board.set_level(7)
             self.curlevel.setText("Hard")
         self.okb.hide()
+        if self.secondeturnstart.isChecked():
+            self.player = BOT
+            self.turnLabel.setText("Computer Turn!")
+            self.spinBox.setEnabled(False)
+            self.mythread = MyThread(self, self.connect_four_board)
+            self.mythread.start()
 
     def play_again(self):
+        self.winLabel.setText("")
         if self.mythread is not None:
             self.mythread.terminate()
         if self.time_thread is not None:
@@ -456,10 +464,17 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
             self.curlevel.setText("Hard")
         # print(self.connect_four_board.level)
         self.connect_four_board.clear()
-        self.player = HUMAN
-        self.turnLabel.setText("Your Turn!")
+        if not self.checkBox_2.isChecked():
+            self.player = BOT
+            self.turnLabel.setText("Computer Turn!")
+            self.spinBox.setEnabled(False)
+            self.mythread = MyThread(self, self.connect_four_board)
+            self.mythread.start()
 
-        self.winLabel.setText("")
+        else:
+            self.player = HUMAN
+            self.turnLabel.setText("Your Turn!")
+            self.winLabel.setText("")
 
         for r in range(6):
             for c in range(7):
