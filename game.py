@@ -360,6 +360,10 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
         self.okb.hide()
 
     def play_again(self):
+        if self.mythread is not None:
+            self.mythread.terminate()
+        if self.time_thread is not None:
+            self.time_thread.terminate()
         if self.radioButton.isChecked():
             self.connect_four_board.level = 3
             self.curlevel.setText("Easy")
@@ -503,7 +507,7 @@ class ConnectFourGUI(QMainWindow, GUI.Ui_MainWindow):
 
     def drop(self, col):
         # self.playNowButton.hide()
-
+        global CUSTOM_BOARD_FLAG
         if CUSTOM_BOARD_FLAG:
             if self.connect_four_board.game_over == 1:
                 return
