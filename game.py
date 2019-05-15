@@ -22,51 +22,45 @@ VERBOSE_MODE = {"max_depth": 0,
 class WriteThread(QThread):
     def __init__(self, gui):
         super(WriteThread, self).__init__()
-        self.quit_flag = False
         self.gui = gui
 
     def run(self):
-        while True:
-            if not self.quit_flag:
-                main_table = self.gui.mainTable
-                nodes_table = self.gui.nodesTable
-                cutoffs_table = self.gui.cutoffsTable
-                branching_factor = VERBOSE_MODE["average_branching_factor"]
-                avg = sum(branching_factor)//len(branching_factor)
-                nodes_no = len(VERBOSE_MODE["leaf_nodes"])
-                cutoffs_no = len(VERBOSE_MODE["cutoffs"])
-                main_table.setItem(0, 1, QTableWidgetItem(str(avg)))
-                main_table.setItem(-1, 1, QTableWidgetItem(str(VERBOSE_MODE["max_depth"])))
-                main_table.setItem(1, 1, QTableWidgetItem(str(nodes_no)))
-                main_table.setItem(2, 1, QTableWidgetItem(str(cutoffs_no)))
+        main_table = self.gui.mainTable
+        nodes_table = self.gui.nodesTable
+        cutoffs_table = self.gui.cutoffsTable
+        branching_factor = VERBOSE_MODE["average_branching_factor"]
+        avg = sum(branching_factor)//len(branching_factor)
+        nodes_no = len(VERBOSE_MODE["leaf_nodes"])
+        cutoffs_no = len(VERBOSE_MODE["cutoffs"])
+        main_table.setItem(0, 1, QTableWidgetItem(str(avg)))
+        main_table.setItem(-1, 1, QTableWidgetItem(str(VERBOSE_MODE["max_depth"])))
+        main_table.setItem(1, 1, QTableWidgetItem(str(nodes_no)))
+        main_table.setItem(2, 1, QTableWidgetItem(str(cutoffs_no)))
 
-                nodes_table.setRowCount(0)
-                nodes_table.setRowCount(nodes_no)
-                for i in range(nodes_no):
-                    node = VERBOSE_MODE["leaf_nodes"][i]
-                    position = (node["node_level"], node["node_number"])
-                    score = node["score"]
-                    nodes_table.setItem(i, 0, QTableWidgetItem(str(position)))
-                    nodes_table.setItem(i, 1, QTableWidgetItem(str(score)))
+        nodes_table.setRowCount(0)
+        nodes_table.setRowCount(nodes_no)
+        for i in range(nodes_no):
+            node = VERBOSE_MODE["leaf_nodes"][i]
+            position = (node["node_level"], node["node_number"])
+            score = node["score"]
+            nodes_table.setItem(i, 0, QTableWidgetItem(str(position)))
+            nodes_table.setItem(i, 1, QTableWidgetItem(str(score)))
 
-                cutoffs_table.setRowCount(0)
-                cutoffs_table.setRowCount(cutoffs_no)
-                for i in range(cutoffs_no):
-                    cutoffs = VERBOSE_MODE["cutoffs"][i]
-                    type = cutoffs["type"]
-                    level = cutoffs["level"]
-                    cutoffs_table.setItem(i, 0, QTableWidgetItem(type))
-                    cutoffs_table.setItem(i, 1, QTableWidgetItem(str(level)))
+        cutoffs_table.setRowCount(0)
+        cutoffs_table.setRowCount(cutoffs_no)
+        for i in range(cutoffs_no):
+            cutoffs = VERBOSE_MODE["cutoffs"][i]
+            type = cutoffs["type"]
+            level = cutoffs["level"]
+            cutoffs_table.setItem(i, 0, QTableWidgetItem(type))
+            cutoffs_table.setItem(i, 1, QTableWidgetItem(str(level)))
 
-                sleep(1)
-                self.gui.tabWidget.setCurrentIndex(2)
-                VERBOSE_MODE["max_depth"] = 0
-                VERBOSE_MODE["average_branching_factor"].clear()
-                VERBOSE_MODE["leaf_nodes"].clear()
-                VERBOSE_MODE["cutoffs"].clear()
-                self.quit_flag = True
-            else:
-                break
+        sleep(1)
+        self.gui.tabWidget.setCurrentIndex(2)
+        VERBOSE_MODE["max_depth"] = 0
+        VERBOSE_MODE["average_branching_factor"].clear()
+        VERBOSE_MODE["leaf_nodes"].clear()
+        VERBOSE_MODE["cutoffs"].clear()
 
         self.quit()
         self.wait()
@@ -75,14 +69,12 @@ class WriteThread(QThread):
 class TimeThread(QThread):
     def __init__(self, gui):
         super(TimeThread, self).__init__()
-        self.quit_flag = False
         self.gui = gui
         self.bro_thread = self.gui.mythread
 
     def run(self):
         value = self.gui.spinBox.value()
         sleep(value)
-        self.quit_flag = True
         if BEST_COL != -1:
             self.bro_thread.stop(from_thread= True)
 
@@ -93,7 +85,6 @@ class TimeThread(QThread):
 class MyThread(QThread):
     def __init__(self, gui, connectFour):
         super(MyThread, self).__init__()
-        self.quit_flag = False
         self.connect_four = connectFour
         self.gui = gui
         self.gui.playNowButton.setEnabled(True)
@@ -104,8 +95,6 @@ class MyThread(QThread):
         board_copy = self.connect_four.board.copy()
         _, col = self.connect_four.minimax(board_copy, self.connect_four.level, -inf, inf, maximizer=True)
         self.connect_four.best_col = col
-        self.quit_flag = True
-        # self.connect_four.drop(col, BOT)
         self.gui.pushButtons[0][col].click()
         self.gui.playNowButton.setEnabled(False)
         self.connect_four.game_over = 0
