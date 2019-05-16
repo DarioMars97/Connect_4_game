@@ -617,7 +617,7 @@ class Ui_MainWindow(object):
         self.radioButton.setText(_translate("MainWindow", "Easy"))
         self.radioButton_2.setText(_translate("MainWindow", "Medium"))
         self.radioButton_3.setText(_translate("MainWindow", "Hard"))
-        self.checkBox_2.setText(_translate("MainWindow", "Play Fisrt"))
+        self.checkBox_2.setText(_translate("MainWindow", "Play First"))
         self.label_3.setText(_translate("MainWindow", "Current Level :"))
         self.checkBox.setText(_translate("MainWindow", "verbose mode"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Tab 2"))
