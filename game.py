@@ -163,9 +163,9 @@ class ConnectFourBoard:
 
     def board_score(self,window, piece):
     	score = 0
-    	opp_piece = HUMAN
-    	if piece == HUMAN:
-    		opp_piece = BOT
+    	opp_piece = HUMAN+1
+    	if piece == HUMAN+1:
+    		opp_piece = BOT+1
 
     	if window.count(piece) == 4:
     		score += 100
@@ -259,18 +259,19 @@ class ConnectFourBoard:
                         "node_number": valid_locations.index(col),
                         "score": score}
                 VERBOSE_MODE["leaf_nodes"].append(node)
+
                 if score > value:
                     best_col = col
                     BEST_COL = best_col
                 value = max(value, score)
                 alpha = max(alpha, value)
-                # print(value)
+
                 if alpha >= beta:
                     cutoff = {"type": "beta",
                               "level": depth}
                     VERBOSE_MODE["cutoffs"].append(cutoff)
                     break
-            # print(value)
+                # print(value)
             return value, best_col
         elif minimizer:
             value = inf
@@ -290,13 +291,12 @@ class ConnectFourBoard:
                     BEST_COL = best_col
                 value = min(value, score)
                 beta = min(value, beta)
-                # print(value)
                 if alpha >= beta:
                     cutoff = {"type": "alpha",
                               "level": depth}
                     VERBOSE_MODE["cutoffs"].append(cutoff)
                     break
-            # print(value)
+                # print(value)
             return value, best_col
 
     def winning_move(self, board):
